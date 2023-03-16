@@ -55,7 +55,6 @@ window.QueueFair = class {
 		for(let i=0; i<scriptTags.length; i++) {
 			let t=scriptTags[i];
 			let a = t.dataset;
-			console.log(a);
 			let clientName=a["queueFairClient"];
 			if(!clientName) {
 				continue;
