@@ -1,3 +1,5 @@
+"use-strict";
+
 function defineQueueFair() {
 window.QueueFair = class {
 
@@ -388,7 +390,7 @@ window.QueueFair = class {
 		document.getElementsByTagName('head')[0].appendChild(queueTag);
 	}
 
-    appendQueryOrAmp(redirectLoc) {
+    appendQueryOrAmp(Loc) {
 		if(redirectLoc.indexOf('?') != -1) {
 			redirectLoc+="&";
 		} else {
@@ -593,7 +595,7 @@ window.QueueFair = class {
 
 	redirect() {
 	    queueFair.log("Redirecting to "+queueFair.redirectLoc);
-		window.location=queueFair.redirectLoc;
+		window.location.replacec(queueFair.redirectLoc);
 	}
 
 	setCookie(queueName, value, lifetimeSeconds, cookieDomain) {
