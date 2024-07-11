@@ -59,11 +59,18 @@ function defineQueueFair() {
 		//RDEBUG this is new.
 		ln = "";
 
+		v = "5.2.25";
+
 		l(what) {
 			this.ln+=what+";";
 			if(this.debug) {
 				this.lg(what);
 			}
+		}
+
+		//Legacy support
+		log(what) {
+			this.l(what);
 		}
 
 		reset() {
@@ -670,7 +677,8 @@ function defineQueueFair() {
 			var src = t.protocol + "://" + queue.adapterServer + "/adapterjs/"
 			+ queue.name + "?qfa=" + t.clientName
 			+ (t.uid != null ? "&uid=" + t.uid : "")
-			+ "&ts=" + (new Date().getTime());
+			+ "&ts=" + (new Date().getTime())
+			+ "&av=js"+t.v;
 			src = t.appendExtra(queue, src);
 			t.l("Checking adapter "+src);
 			queueTag.src=src;
@@ -873,6 +881,12 @@ function defineQueueFair() {
 					t.l("Redirecting to "+rl);
 					t.redirectLoc=rl;
 					setTimeout(queueFair.redirect,100);
+					return;
+				}
+
+				if(ar.action == "REFRESH") {
+					//No queue or account found.
+					t.complete("No queue or account.");
 					return;
 				}
 				//Remain on page.
@@ -1126,12 +1140,13 @@ function defineQueueFair() {
 					return;
 				}
 				t.reported++;
-				var errorData={ "name": err.name,
+				var errorData={"name": err.name,
 				"message": err.message,
 				"url": document.location.href,
 				"stack": err.stack };
 				var errorTag = document.createElement('script');
 				var res = {};
+				res.v = t.v;
 				res.err = err;
 				res.errorData = errorData;
 				res.parsing = t.parsing;
