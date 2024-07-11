@@ -10,14 +10,22 @@ function defineQueueFair() {
 		reported=0;
 
 		isLocal=false;
+
+		rdebug = false;
+
+		useLocal = false;
+
 		debug=false;
+
 		parsing=false;
 
 		protocol="https";
 
+		started = false;
+
 		cookieNameBase="QueueFair-Pass-";
 
-		log = function() {};
+		lg = function() {};
 
 		redirectLoc=null;
 
@@ -34,6 +42,48 @@ function defineQueueFair() {
 		scriptSrc=null;
 
 		queueDomain = null;
+		target = null;
+
+		uid = null;
+
+		errMode = "POST";
+
+		isFT = false;
+
+		//Single Match Change this in reset too!
+		isSM = false;
+
+		//Join token
+		jt = null;
+
+		//RDEBUG this is new.
+		ln = "";
+
+		l(what) {
+			this.ln+=what+";";
+			if(this.debug) {
+				this.lg(what);
+			}
+		}
+
+		reset() {
+			var t = this;
+			t.adapterResult = null;
+			t.adapterQueue = null;
+			t.settings = null;
+			t.oldHref = document.location.htref;
+			t.redirectLoc = null;
+			t.parsing = false;
+			t.reported = 0;
+			t.passed = Array();
+			t.scriptSrc = null;
+			t.extra = null;
+			t.queueDomain = null;
+			t.jt = null;
+			t.isFT = false;
+			t.isSM = false;
+			t.uid = null;
+		}
 
 		hc(s) {
 			var h = 0, l = s.length, i = 0;
@@ -61,32 +111,39 @@ function defineQueueFair() {
 		}
 
 		sp(p) {
-			this.ip(p,"transition","all 0.3s");
-			this.ip(p,"pointer-events","auto");
+			var t=this;
+			t.ip(p,"transition","all 0.3s");
+			t.ip(p,"pointer-events","auto");
 			setTimeout(() => {
-				this.ip(p,"opacity","1.0");},500);
+				t.ip(p,"opacity","1.0");},500);
 			setTimeout(() => {
-				this.hp(p)
+				t.hp(p)
 			},10000);
 		}
 
 		hp(p) {
-			this.ip(p,"transition","all ease-in-out 1s");
-			this.ip(p,"transform","translateY(200%)");
-			this.ip(p,"opacity","0.0");
-			setTimeout(() => { this.vp },2000);
+			var t=this;
+			t.ip(p,"transition","all ease-in-out 1s");
+			t.ip(p,"transform","translateY(200%)");
+			t.ip(p,"opacity","0.0");
+			setTimeout(() => { t.vp },2000);
 		}
 
 		vp() {
-			this.ip(p,"transition","all 0s");
-			this.ip(p,"height","0");
-			this.ip(p,"width","0",);
-			this.ip(p,"transform","translateX(-200px) translateY(200px)");
+			var t=this;
+			t.ip(p,"transition","all 0s");
+			t.ip(p,"height","0");
+			t.ip(p,"width","0",);
+			t.ip(p,"transform","translateX(-200px) translateY(200px)");
 		}
 
 		rp() {
-			if(!document.body) return;
-			document.body.removeChild(this.p);
+			try {
+				if(!document.body) return;
+				document.body.removeChild(this.p);
+			} catch (err) {
+				//Do nothing.  Already removed.
+			}
 		}
 
 
@@ -109,8 +166,9 @@ function defineQueueFair() {
 		}
 
 		dp(set) {
-			if(this.p === null) {
-				this.ps = set;
+			var t=this;
+			if(t.p === null) {
+				t.ps = set;
 				return;
 			}
 			var s = false;
@@ -118,17 +176,18 @@ function defineQueueFair() {
 				if(typeof set.acc === "undefined")
 					return;
 				var w = set.acc.c;
+				t.isFT = true;
 				var n = Date.now() / 1000;
 				if(n - w < 14 * 24 * 60 * 60) {
 					return;
 				}
 				if(typeof set.acc.hc !== "undefined") {
-					if(set.acc.hc == this.hc(this.clientName)) {
+					if(set.acc.hc == t.hc(t.clientName)) {
 						return;
 					}
 				}
 
-				var hls = this.sa('localStorage');
+				var hls = t.sa('localStorage');
 				if(!hls) {
 					return;
 				}
@@ -136,23 +195,23 @@ function defineQueueFair() {
 				w = localStorage.getItem(ik);
 				if(w === null || n - w > 60*60*5) {
 					localStorage.setItem(ik, n);
-					this.sp(this.p);
+					t.sp(t.p);
 					s = true;
 					return;
 				}
 			} finally {
-				if(!s) setTimeout(() => {this.rp()},30000);
+				if(!s) setTimeout(() => {t.rp()},30000);
 			}
 		}
 
 		mp() {
 			var inp = "";
-			var s = this.s;
+			var t=this,s = t.s;
 			var i=0;
 			for(; i<s.length; i++) {
 				inp+=String.fromCharCode(s.charCodeAt(i)-3);
 			}
-			s = this.de(inp);
+			s = t.de(inp);
 			i = s.indexOf("style=\"");
 			i+="style=\"".length;
 			var j = s.indexOf("\"",i);
@@ -163,11 +222,12 @@ function defineQueueFair() {
 			var p = document.createElement("div");
 			p.style.cssText = sty;
 			p.innerHTML = inner;
+			if(!document.body) return;
 			document.body.appendChild(p);
-			this.p = p;
-			if(this.ps !== null) {
-				this.dp(this.ps);
-				this.ps = null;
+			t.p = p;
+			if(t.ps !== null) {
+				t.dp(t.ps);
+				t.ps = null;
 			}
 		}
 
@@ -185,70 +245,99 @@ function defineQueueFair() {
 		}
 
 		reset() {
-			this.parsing = false;
-			this.passed = Array();
-			this.redirectLoc=null;
-			this.adapterResult=null;
-			this.adapterQueue=null;
+			var t=this;
+			t.parsing = false;
+			t.passed = Array();
+			t.redirectLoc=null;
+			t.adapterResult=null;
+			t.adapterQueue=null;
 		}
 
 		extractClientName() {
-			let scriptTags=document.getElementsByTagName("script");
-			for(let i=0; i<scriptTags.length; i++) {
-				let t=scriptTags[i];
-				let a = t.dataset;
-				let clientName=a["queueFairClient"];
+			var t=this;
+			var scriptTags=document.getElementsByTagName("script");
+			for(var i=0; i<scriptTags.length; i++) {
+				var s = scriptTags[i];
+				var a = s.dataset;
+				var clientName=a["queueFairClient"];
 				if(!clientName) {
 					continue;
 				}
-				this.clientName=clientName;
-				let debugState=a["queueFairDebug"];
-				if(debugState) {
-					this.debug=true;
-				}
-				let qs = a["queueFairDomain"];
+				t.clientName=clientName;
+				var debugState=a["queueFairDebug"];
+				t.setDebug(debugState);
+
+				var qs = a["queueFairDomain"];
 				if(qs) {
-					this.queueDomain = qs;
+					t.queueDomain = qs;
 				}
-				this.extra=a["queueFairExtra"];
-				this.scriptSrc = t.getAttribute("src");
+				t.extra=a["queueFairExtra"];
+				var tar = a["queueFairTarget"];
+				if(tar) {
+					t.target = tar;
+				}
+				var jt = a["queueFairJoinToken"];
+				if(jt) {
+					t.jt = jt;
+				}
+				var sm = a["queueFairSingleMatch"];
+				t.isSM = (sm && sm != "false");
+
+				var src = a["queueFairSrc"];
+				t.scriptSrc = (src) ? src : s.getAttribute("src");
+
 				break;
 			}
-			if(this.debug) {
-				this.log=console.log.bind(window.console);
+			if(t.debug) {
+				//RDEBUG bind it to lg instead.
+				t.lg=console.log.bind(window.console);
 			}
 		}
 
 		extractClientNameFromDataLayer() {
+			var t=this;
 			if(typeof dataLayer === "undefined" || !dataLayer) {
 				return;
 			}
 			for(var i in dataLayer) {
-				let o=dataLayer[i];
+				var o=dataLayer[i];
 				if(typeof o.g === "undefined") {
 					continue;
 				}
-				let clientName = o.g.queueFairClient;
+				var clientName = o.g.queueFairClient;
 				if(!clientName) {
 					continue;
 				}
-				this.clientName = clientName;
-				let debugState=o.g.queueFairDebug;
-				if(debugState && debugState !== "false") {
-					this.debug=true;
-				}
-				let qs = o.g.queueFairDomain;
+				t.clientName = clientName;
+				var debugState=o.g.queueFairDebug;
+				t.setDebug(debugState);
+				var qs = o.g.queueFairDomain;
 				if(qs) {
-					this.queueDomain = qs;
+					t.queueDomain = qs;
 				}
-				let extra=o.g.queueFairExtra;
+				var extra=o.g.queueFairExtra;
 				if(extra) {
-					this.extra=extra;
+					t.extra=extra;
 				}
+				var tar = o.g.queueFairTarget;
+				if(tar) {
+					t.target = tar;
+				}
+				var src = o.g.queueFairSrc;
+				if(src) {
+					t.scriptSrc = src;
+				}
+				var jt = o.g.queueFairJoinToken;
+				if(jt) {
+					t.jt = jt;
+				}
+				var sm = o.g.queueFairSingleMatch;
+				t.isSM = (sm && sm != "false");
 				break;
 			}
-			if(this.debug) {
-				this.log=console.log.bind(window.console);
+			if(t.debug) {
+				//RDEBUG bind to lg instead.
+				t.lg=console.log.bind(window.console);
 			}
 		}
 
@@ -265,6 +354,8 @@ function defineQueueFair() {
 				return false;
 			}
 
+			var t=this;
+
 			var firstOp = true;
 			var state = false;
 
@@ -280,14 +371,14 @@ function defineQueueFair() {
 					}
 				}
 
-				var ruleMatch = this.isRuleMatch(rule);
+				var ruleMatch = t.isRuleMatch(rule);
 
 				if (firstOp) {
 					state = ruleMatch;
 					firstOp = false;
-					this.log("  Rule 1: " + ((ruleMatch) ? "true" : "false"));
+					t.l("  Rule 1: " + ((ruleMatch) ? "true" : "false"));
 				} else {
-					this.log("  Rule " + (i+1) + ": " + ((ruleMatch) ? "true" : "false"));
+					t.l("  Rule " + (i+1) + ": " + ((ruleMatch) ? "true" : "false"));
 
 					if (rule.operator == "And") {
 						state = (state && ruleMatch);
@@ -303,24 +394,25 @@ function defineQueueFair() {
 				}
 			}
 
-			this.log("Final result is " + ((state) ? "true" : "false"));
+			t.l("Final result is " + ((state) ? "true" : "false"));
 
 			return state;
 		}
 
 		isRuleMatch(rule) {
-			let comp=""+window.location;
-			this.log("Loc is "+comp);
+			var t=this;
+			var comp=""+window.location;
+			t.l("Loc is "+comp);
 			if(rule.component=="Domain") {
 				comp=comp.replace('http://','').replace('https://','')
 				.split(/[/?#]/)[0];
 			} else if(rule.component=="Path") {
-				let domain=comp.replace('http://','').replace('https://','')
+				var domain=comp.replace('http://','').replace('https://','')
 				.split(/[/?#]/)[0];
 				comp=comp.substring(comp.indexOf(domain)+domain.length);
 
-				let i=0;
-				if(this.startsWith(comp,":")) {
+				var i=0;
+				if(t.startsWith(comp,":")) {
 				//We have a port
 					i=comp.indexOf("/");
 					if(i !=-1 ) {
@@ -342,7 +434,7 @@ function defineQueueFair() {
 					comp="/";
 				}
 			} else if(rule.component=="Query") {
-				let i = comp.indexOf('?');
+				var i = comp.indexOf('?');
 				if (i == -1) {
 					comp = "";
 				} else if(comp == "?") {
@@ -351,10 +443,10 @@ function defineQueueFair() {
 					comp = comp.substring(i+1);
 				}
 			} else if(rule.component=="Cookie") {
-				comp=this.getCookie(rule.name);
+				comp=t.getCookie(rule.name);
 			}
 
-			let test=rule.value;
+			var test=rule.value;
 
 			if(rule.caseSensitive===false) {
 				comp=comp.toLowerCase();
@@ -362,14 +454,14 @@ function defineQueueFair() {
 					test=test.toLowerCase();
 				}
 			}
-			this.log("Testing "+rule.component+" "+test+" against "+comp);
+			t.l("Testing "+rule.component+" "+test+" against "+comp);
 
-			let ret=false;
+			var ret=false;
 
 			if(rule.match=="Equal" && comp == test) {
 				ret=true;
 			} else if(rule.match=="Contain" && comp!==null
-				&& this.includes(comp,test)) {
+				&& t.includes(comp,test)) {
 				ret=true;
 			} else if(rule.match=="Exist") {
 				if(typeof comp == 'undefined' || comp===null || ""===comp) {
@@ -381,7 +473,7 @@ function defineQueueFair() {
 				if(typeof comp == 'undefined' || comp === null) {
 					comp = "";
 				}
-				let r = new RegExp(test);
+				var r = new RegExp(test);
 				ret = r.test(comp);
 			}
 
@@ -393,13 +485,14 @@ function defineQueueFair() {
 		}
 
 		onMatch(queue) {
-			if(this.isPassed(queue)) {
-				this.log("Already passed "+queue.name+".");
-				if(this.extra == "CLEAR") {
-					let val=this.getCookie(this.cookieNameBase+queue.name);
-					this.log("Clear receieved - cookie is "+val);
+			var t=this;
+			if(t.isPassed(queue)) {
+				t.l("Already passed "+queue.name+".");
+				if(t.extra == "CLEAR") {
+					var val=t.getCookie(t.cookieNameBase+queue.name);
+					t.l("Clear receieved - cookie is "+val);
 					if(""!==val) {
-						this.setCookie(queue.name, val, 20, queue.cookieDomain);
+						t.setCookie(queue.name, val, 20, queue.cookieDomain);
 					} else {
 						return true;
 					}
@@ -407,132 +500,179 @@ function defineQueueFair() {
 					return true;
 				}
 			}
-			this.log("Checking at server "+queue.displayName);
-			this.consultAdapter(queue);
+			t.l("Checking at server "+queue.displayName);
+			t.consultAdapter(queue);
 			return false;
 		}
 
 		isPassed(queue) {
-			if(this.passed[queue.name]) {
-				this.log("Queue "+queue.name+" marked as passed already.");
+			var t=this;
+			if(t.passed[queue.name]) {
+				t.l("Queue "+queue.name+" marked as passed already.");
 				return true;
 			}
-			let queueCookie=this.getCookie(this.cookieNameBase+queue.name);
+			var queueCookie=t.getCookie(t.cookieNameBase+queue.name);
 			if(!queueCookie || queueCookie==="") {
-				this.log("No cookie found for queue "+queue.name);
+				t.l("No cookie found for queue "+queue.name+" "+document.cookie);
 				return false;
 			}
-			if(!this.includes(queueCookie,queue.name)) {
-				this.log("Cookie value is invalid for "+queue.name);
+			if(!t.includes(queueCookie,queue.name)) {
+				t.l("Cookie value is invalid for "+queue.name);
 				return false;
 			}
-			this.log("Got a queueCookie for "+queue.name+" "+queueCookie);
+			t.l("Got a queueCookie for "+queue.name+" "+queueCookie);
 			return true;
 		}
 
-		getCookie(cname) {
-			if(!cname) {
-				return "";
+		setUIDFromCookie() {
+			var t = this;
+			var cname = "QueueFair-Store-"+t.clientName;
+			//t.l("Looking for "+cname);
+			var uidCookie = t.getCookie("QueueFair-Store-"+t.clientName);
+			if (uidCookie == '') {
+				return;
 			}
-			try {
-				let co = document.cookie;
-				if(!co) {
-					return "";
-				}
 
-				let name = cname + "=";
-				let decodedCookie = co;
-				try {
-					decodedCookie = decodeURIComponent(co);
-				} catch (err) {
-					try {
-						decodedCookie = unescape(co)
-					} catch (err) {
-					}
-				}
-				let ca = decodedCookie.split(';');
-				for(let i = 0; i <ca.length; i++) {
-					let c = ca[i];
-					while (c.charAt(0) == ' ') {
-						c = c.substring(1);
-					}
-					if (c.indexOf(name) === 0) {
-						return c.substring(name.length, c.length);
-					}
-				}
-			} catch (err) {
-				this.errorHandler(err);
+			var i = uidCookie.indexOf(':');
+			if (i == -1) {
+				i = uidCookie.indexOf('=');
 			}
-			return "";
+
+			if (i == -1) {
+				t.l('= not found in UID Cookie! ' + uidCookie);
+				t.uid = uidCookie;
+				return;
+			}
+
+			t.uid = uidCookie.substring(i + 1);
+			t.l('UID set to ' + t.uid);
 		}
 
-		gotSettings() {
-			try {
-				this.log("Got client settings.");
-				this.checkQueryString();
 
-				this.parseSettings();
+		getCookie(name) {
+			if(this.useLocal && (!name || !document.cookie)) {
+				return this.retrieveCookie(name);
+			}
+			try {
+				var matches = document.cookie.match(new RegExp(
+					"(?:^|; )" + name.replace(/([\.$?*|{}\(\)\[\]\\\/\+^])/g, '\\$1') + "=([^;]*)"
+					));
+				var ret = matches ? decodeURIComponent(matches[1]) : "";
+				if(ret) {
+					return ret;
+				}
+				return this.retrieveCookie(name);
+			} catch (err) {
+				this.e(err);
+			}
+			return this.retrieveCookie(name);
+		}
+
+
+		gotSettings() {
+			var t=this;
+			try {
+				t.l("Got client settings.");
+				t.checkQueryString();
+
+				t.parseSettings();
 			} catch(err) {
-				this.log("QF Error ");
-				this.log(err);
-				this.errorHandler(err);
+				t.l("QF Error ");
+				t.l(err);
+				t.e(err);
 			}
 		}
 
 
 		parseSettings() {
-			if(!this.settings) {
-				this.log("ERROR: Settings not set.");
+			var t=this;
+			if(!t.settings) {
+				t.l("ERROR: Settings not set.");
 				return;
 			}
-			let set = this.settings;
+			var set = t.settings;
 			try {
-				this.dp(set);
+				t.dp(set);
 			} catch (err) {
-				this.errorHandler(err);
+				t.e(err);
 			}
 
-			let queues=set.queues;
+			if(typeof set.sm !== "undefined") {
+				t.isSM = set.sm;
+			}
+
+			var queues=set.queues;
 			if(!queues || !queues[0]) {
-				this.log("No queues found.");
+				t.l("No queues found.");
 				return;
 			}
-			this.parsing=true;
-			this.log("Running through queue rules");
-			for(let i=0; i<queues.length; i++) {
-				let queue=queues[i];
-				if(this.passed[queue.name]) {
-					this.log("Already passed " + queue.displayName
-						+ " "+this.passed[queue.name]);
-					continue;
-				}
-				this.log("Checking "+queue.displayName);
-				if(this.isMatch(queue)) {
-					this.log("Got a match "+queue.displayName);
-					if(!this.onMatch(queue)) {
-						this.log("Found matching unpassed queue "
-							+ queue.displayName);
-						return;
+			t.parsing=true;
+			t.l("Running through queue rules");
+			for(var i=0; i<queues.length; i++) {
+				try {
+					var queue=queues[i];
+					t.l("Checking "+queue.displayName);
+					if(t.isMatch(queue)) {
+						t.l("Got a match "+queue.displayName);
+
+						if(t.passed[queue.name]) {
+							var l = "Already passed " + queue.displayName
+							+ " "+t.passed[queue.name];
+							if(t.isSM) {
+								t.l(l+" - breaking");
+								break;
+							} else {
+								t.l(l+" - continuing");
+								continue;
+							}
+						}
+
+						if(!t.onMatch(queue)) {
+							t.l("Found matching unpassed queue "
+								+ queue.displayName);
+							return;
+						}
+
+						if(t.isSM) {
+							t.l("Match found "+queue.displayName+" - skipping remaining queues.");
+							break;			//End at first match always.
+						}
+					} else {
+						t.l("Rules did not match "+queue.displayName);
 					}
-				} else {
-					this.log("Rules did not match "+queue.displayName);
+				} catch (err) {
+					t.e(err);
 				}
 			}
-			this.log("All queues checked.");
-			this.parsing=false;
+			t.l("Adapter finishing.");
+			t.parsing=false;
+			t.complete("Completed normally");
+		}
+
+		complete(reason) {
 			if(typeof qfOnJSAdapterComplete !== "undefined") {
-				qfOnJSAdapterComplete();
+				qfOnJSAdapterComplete(reason);
+			}
+			if(reason != "Completed normally") {
+				this.e(new Error(reason),false);
 			}
 		}
 
 		consultAdapter(queue) {
-			this.adapterQueue = queue;
-			let queueTag = document.createElement('script');
-			let src = this.protocol + "://" + queue.adapterServer + "/adapterjs/"
-			+ queue.name + "?qfa=" + this.clientName + "&ts="
-			+ (new Date().getTime());
-			src = this.appendExtra(queue, src);
-			this.log("Checking adapter "+src);
+			var t=this;
+			//RDEBUG this is new
+			if(t.rdebug) t.e(new Error(t.ln),false);
+			t.adapterQueue = queue;
+			var queueTag = document.createElement('script');
+			queueTag.onerror = () => {
+				t.complete("Adapter Error");
+			}
+			var src = t.protocol + "://" + queue.adapterServer + "/adapterjs/"
+			+ queue.name + "?qfa=" + t.clientName
+			+ (t.uid != null ? "&uid=" + t.uid : "")
+			+ "&ts=" + (new Date().getTime());
+			src = t.appendExtra(queue, src);
+			t.l("Checking adapter "+src);
 			queueTag.src=src;
 			document.getElementsByTagName('head')[0].appendChild(queueTag);
 		}
@@ -546,52 +686,56 @@ function defineQueueFair() {
 			return loc;
 		}
 
-		appendVariant(queue, redirectLoc) {
-			this.log("Looking for variant");
+		appendVariant(queue, rl) {
+			var t=this;
+			t.l("Looking for variant");
 			if(!queue) {
-				return redirectLoc;
+				return rl;
 			}
-			let variant=this.getVariant(queue);
+			var variant=t.getVariant(queue);
 			if(!variant) {
-				this.log("No Variant Found");
-				return redirectLoc;
+				t.l("No Variant Found");
+				return rl;
 			}
-			this.log("Found variant "+variant);
+			t.l("Found variant "+variant);
 
-			redirectLoc=this.appendQueryOrAmp(redirectLoc);
-
-			redirectLoc+="qfv="+encodeURIComponent(variant);
-			return redirectLoc;
+			return t.appendURL(rl, "qfv",variant);
 		}
 
-		appendExtra(queue, redirectLoc) {
-			if(!this.extra) {
-				return redirectLoc;
-			}
+		appendExtra(queue, rl) {
+			var t=this;
 			if(!queue) {
-				return redirectLoc;
+				return rl;
 			}
-			redirectLoc=this.appendQueryOrAmp(redirectLoc);
-			redirectLoc+="qfx="+encodeURIComponent(this.extra);
-			return redirectLoc;
+			return t.appendURL(rl, "qfx",t.extra);
+		}
+
+		appendURL(url, n, v) {
+			if(v === null || typeof v === "undefined") {
+				return url;
+			}
+			url = this.appendQueryOrAmp(url);
+			url += n + "=" + encodeURIComponent(v);
+			return url;
 		}
 
 		getVariant(queue) {
-			this.log("Getting variants for "+queue.name);
+			var t=this;
+			t.l("Getting variants for "+queue.name);
 			if(!queue.activation) {
 				return null;
 			}
-			let variantRules=queue.activation.variantRules;
+			var variantRules=queue.activation.variantRules;
 			if(!variantRules) {
 				return null;
 			}
-			this.log("Got variant rules for "+queue.name);
-			for(let i=0; i<variantRules.length; i++) {
-				let variant=variantRules[i];
-				let variantName=variant.variant;
-				let rules=variant.rules;
-				let ret = this.isMatchArray(rules);
-				this.log("Variant match "+variantName+" "+ret);
+			t.l("Got variant rules for "+queue.name);
+			for(var i=0; i<variantRules.length; i++) {
+				var variant=variantRules[i];
+				var variantName=variant.variant;
+				var rules=variant.rules;
+				var ret = t.isMatchArray(rules);
+				t.l("Variant match "+variantName+" "+ret);
 				if(ret) {
 					return variantName;
 				}
@@ -601,28 +745,29 @@ function defineQueueFair() {
 		}
 
 		restoreAdapterQueue() {
-			if(this.adapterQueue) {
+			var t=this;
+			if(t.adapterQueue) {
 	        		//All good.
 				return null;
 			}
-			if(!this.settings) {
+			if(!t.settings) {
 				return "No adapterQueue and no settings!";
 			}
-			if(!this.settings.queues) {
+			if(!t.settings.queues) {
 				return "No adapterQueue and no queues!";
 			}
-			let sqs = this.settings.queues;
-			if(!this.adapterResult.queue) {
+			var sqs = t.settings.queues;
+			if(!t.adapterResult.queue) {
 				return "No adapaterQueue and no queue in result!";
 			}
-			let q = this.adapterResult.queue;
+			var q = t.adapterResult.queue;
 			if(sqs.length === 0) {
 				return "adapterQueue "+q+" not in empty settings!";
 			}
-			for(let i=0; i< sqs.length; i++) {
-				let queue = sqs[i];
+			for(var i=0; i< sqs.length; i++) {
+				var queue = sqs[i];
 				if(queue.name === q) {
-					this.adapterQueue = queue;
+					t.adapterQueue = queue;
 					return null;
 				}
 			}
@@ -630,167 +775,250 @@ function defineQueueFair() {
 		}
 
 		gotAdapter() {
+			var t=this;
 			try {
-				let ar = this.adapterResult;
-				this.log("Got from adapter "+JSON.stringify(ar));
+				var ar = t.adapterResult;
+				t.l("Got from adapter "+JSON.stringify(ar));
 				if(!ar) {
-					this.log("ERROR: onAdapter() called without result");
+					t.l("ERROR: onAdapter() called without result");
 					return;
 				}
 				if(!ar.action) {
-					this.log("ERROR: onAdapter() called without result action");
+					t.l("ERROR: onAdapter() called without result action");
+				}
+
+				if(typeof ar.uid !== "undefined") {
+					//Create store cookie.
+					let uid = ar.uid;
+					let cs = ar.cookieSeconds;
+					t.setCookie("X7d3d932",
+						"u:"+ar.uid,
+						ar.cookieSeconds,
+						t.adapterQueue.cookieDomain);
 				}
 
 				if(ar.action=="SendToQueue") {
-					this.log("Sending to queue server.");
+					t.l("Sending to queue server.");
 
-					let st = this.restoreAdapterQueue(ar);
+					var st = t.restoreAdapterQueue(ar);
 					var dynamicTarget = "enabled";
 					if(st) {
-						this.log("Recoverable Error - no adapterQueue for "+JSON.stringify(ar));
+						t.l("Recoverable Error - no adapterQueue for "+JSON.stringify(ar));
 					} else {
-						dynamicTarget = this.adapterQueue.dynamicTarget;
+						dynamicTarget = t.adapterQueue.dynamicTarget;
 					}
-					let queryParams="";
-					let winLoc = ""+window.location;
+					var queryParams="";
+					var winLoc = ""+window.location;
+					if(this.target != null) {
+						winLoc = this.target;
+					}
 					if(dynamicTarget != "disabled") {
 						queryParams+="target=";
 						queryParams+=encodeURIComponent(winLoc);
 					}
-					let redirectLoc = ar.location;
 
-					if(this.queueDomain) {
-						let qd = this.queueDomain;
-						this.log("Using queueDomain "+qd+" on "+redirectLoc);
-						let i = redirectLoc.indexOf("//");
+					if (t.uid != null) {
+						if (queryParams != '') {
+							queryParams += '&';
+						}
+						queryParams += 'qfuid=' + t.uid;
+					}
+
+					var rl = ar.location;
+
+					if(t.queueDomain) {
+						var qd = t.queueDomain;
+						t.l("Using queueDomain "+qd+" on "+rl);
+						var i = rl.indexOf("//");
 						if(i!=-1) {
 							i+=2;
-							let colPos = redirectLoc.indexOf(":",i);
-							let slashPos = redirectLoc.indexOf("/",i);
+							var colPos = rl.indexOf(":",i);
+							var slashPos = rl.indexOf("/",i);
 							if(colPos==-1) {
 				            			//no colon
 								if(slashPos==-1) {
 				                			//https://some.domain
-									redirectLoc= redirectLoc.substring(0,i)+qd;
+									rl= rl.substring(0,i)+qd;
 								} else {
 				                			//https://some.domain/path
-									redirectLoc= redirectLoc.substring(0,i)+qd+redirectLoc.substring(slashPos);
+									rl= rl.substring(0,i)+qd+rl.substring(slashPos);
 								}
 							} else {
 				            			//has a colon
 								if(slashPos == -1) {
 				                			//colon no slash
 				                			//https://some.domain:8080
-									redirectLoc= redirectLoc.substring(0,i)+qd+redirectLoc.substring(colPos);
+									rl= rl.substring(0,i)+qd+rl.substring(colPos);
 								} else if(colPos < slashPos) {
     				                			//https://some.domain:8080/path
-									redirectLoc= redirectLoc.substring(0,i)+qd+redirectLoc.substring(colPos);
+									rl= rl.substring(0,i)+qd+rl.substring(colPos);
 								} else {
     		                    					//https://some.domain/path?param=:
-									redirectLoc= redirectLoc.substring(0,i)+qd+redirectLoc.substring(slashPos);
+									rl= rl.substring(0,i)+qd+rl.substring(slashPos);
 								}
 							}
 						}
-						this.log("queueDomain applied "+redirectLoc);
+						t.l("queueDomain applied "+rl);
 					}
 
 					if(queryParams!=="") {
-						redirectLoc=redirectLoc+"?"+queryParams;
+						rl=rl+"?"+queryParams;
 					}
-					let aq = this.adapterQueue;
-					redirectLoc=this.appendVariant(aq, redirectLoc);
-					redirectLoc=this.appendExtra(aq, redirectLoc);
-
-					this.log("Redirecting to "+redirectLoc);
-					this.redirectLoc=redirectLoc;
+					var aq = t.adapterQueue;
+					rl=t.appendVariant(aq, rl);
+					if(!t.isFT) {
+						rl=t.appendExtra(aq, rl);
+						rl=t.appendURL(rl,"qfjt",t.jt);
+					}
+					t.l("Redirecting to "+rl);
+					t.redirectLoc=rl;
 					setTimeout(queueFair.redirect,100);
 					return;
 				}
 				//Remain on page.
 
+
+
 				if(ar.action=="CLEAR") {
-					this.log("CLEAR received for "+ar.queue);
-					this.passed[ar.queue]=true;
-					if(this.parsing) {
-						this.parseSettings();
+					t.l("CLEAR received for "+ar.queue);
+					t.passed[ar.queue]=true;
+					if(t.parsing) {
+						t.parseSettings();
 					}
 					return;
 				}
 
-				//SafeGuard etc 
-				let st = this.restoreAdapterQueue();
+				//SafeGuard etc
+				var st = t.restoreAdapterQueue();
 				if(st) {
 					throw new Error(st);
 				}
-				let aq = this.adapterQueue;
-				this.setCookie(ar.queue,
+				var aq = t.adapterQueue;
+				t.setCookie(ar.queue,
 					ar.validation,
 					aq.passedLifetimeMinutes*60,
 					aq.cookieDomain);
 
-				this.log("Marking "+ar.queue+" as passed by adapter.");
-				this.passed[ar.queue]=true;
+				t.l("Marking "+ar.queue+" as passed by adapter.");
+				t.passed[ar.queue]=true;
 
-				if(this.parsing) {
-					this.parseSettings();
+				if(t.parsing) {
+					t.parseSettings();
 				}
 			} catch (err) {
-				this.log("QF Error "+JSON.stringify(err));
-				this.errorHandler(err);
+				t.l("QF Error "+JSON.stringify(err));
+				t.e(err);
 			}
 		}
 
 		redirect() {
-			queueFair.log("Redirecting to "+queueFair.redirectLoc);
+			queueFair.l("Redirecting to "+queueFair.redirectLoc);
 			window.location.replace(queueFair.redirectLoc);
 		}
 
 		setCookie(queueName, value, lifetimeSeconds, cookieDomain) {
-			this.log("Setting cookie for " + queueName + " to " + value
-				+ " on " + cookieDomain);
+			var t=this;
+			var cookieName=t.cookieNameBase+queueName;
+			if(queueName == "X7d3d932") {
+				cookieName = "QueueFair-Store-"+t.clientName;
+			} else {
+				t.l("Setting cookie for " + queueName + " to " + value
+					+ (typeof cookieDomain === "undefined" ? "" : " on "+cookieDomain));
+			}
 
-			let cookieName=this.cookieNameBase+queueName;
-
-			let date=new Date();
+			var date=new Date();
 
 			date.setTime(date.getTime()+lifetimeSeconds*1000);
-			var  theCookie=cookieName+"="+value;
+			var  c=cookieName+"="+value;
 			if(typeof cookieDomain === 'undefined' || cookieDomain===null
 				|| ""===cookieDomain) {
 			} else {
-				theCookie+="; domain="+cookieDomain;
+				c+="; domain="+cookieDomain;
 			}
-			theCookie+="; path=/;expires="+date.toUTCString();
-			if(!this.startsWith(""+document.location,"https://")) {
+			c+="; path=/; expires="+date.toUTCString();
+			if(!t.startsWith(""+document.location,"https://")) {
 	        		//do nothing
 			} else {
-				theCookie+="; Secure; SameSite=None";
+				c+="; Secure; SameSite=None";
 			}
 
-			this.log("Setting cookie "+theCookie);
-			document.cookie = theCookie;
+			t.l("Setting cookie "+c);
+			if(t.useLocal) t.storeCookie(cookieName,value,lifetimeSeconds);
+			document.cookie = c;
+
+			if(!t.rdebug) {
+				return;
+			}
+
+			if(cookieName.indexOf("Store") != -1) {
+				return;
+			}
+			var res = t.getCookie(cookieName);
+			t.e(new Error(queueName+" C IS:"+res), false);
 		}
 
+		storeCookie(name,value,lifetimeSeconds) {
+			var t = this;
+			try {
+				if(!t.sa('localStorage')) {
+					return;
+				}
+				localStorage.setItem(name,value);
+				localStorage.setItem("QFEXP"+name, Date.now()+(lifetimeSeconds*1000));
+			} catch (err) {
+				t.e(err);
+			}
+		}
+
+		retrieveCookie(name) {
+			var t = this;
+			try {
+				if(!t.sa('localStorage')) {
+					return "";
+				}
+				var val = localStorage.getItem(name);
+				if(!val) {
+					return "";
+				}
+				var exp = localStorage.getItem("QFEXP"+name);
+				if(!exp) {
+					return "";
+				}
+				if(Date.now() > exp) {
+					localStorage.removeItem(name);
+					localStorage.removeItem("EXP"+name);
+					return "";
+				}
+				return val;
+			} catch (err) {
+				t.e(err);
+			}
+			return "";
+		}
 
 		loadSettings() {
-			let settingsTag = document.createElement('script');
-			let src = this.clientName+"/queue-fair-settings.js";
-			if(!this.isLocal) {
-				let fromTag=false;
-				let s = this.scriptSrc;
+			var t=this;
+			var settingsTag = document.createElement('script');
+			settingsTag.onerror = () => {
+				t.complete("Settings Error");
+			}
+			var src = t.clientName+"/queue-fair-settings.js";
+			if(!t.isLocal) {
+				var fromTag=false;
+				var s = t.scriptSrc;
 				if(s != null) {
-					let i = s.indexOf("://");
+					var i = s.indexOf("://");
 					if(i!=-1) {
 						i+=3;
-						let j = s.indexOf("/",i);
+						var j = s.indexOf("/",i);
 						if(j != -1) {
-							src = this.protocol+"://"+s.substring(i,j)+"/"+src;
+							src = t.protocol+"://"+s.substring(i,j)+"/"+src;
 							fromTag = true;
 						}
 					}
 				}
 				if(!fromTag) {
-					src=this.protocol+"://files.queue-fair.net/"+src;
+					src=t.protocol+"://files.queue-fair.net/"+src;
 				}
 			}
 			settingsTag.src=src;
@@ -798,38 +1026,39 @@ function defineQueueFair() {
 		}
 
 		checkQueryString() {
-			let urlParams = ""+window.location.search;
-			let q=urlParams.indexOf("qfqid=");
+			var t=this;
+			var urlParams = ""+window.location.search;
+			var q=urlParams.indexOf("qfqid=");
 			if(q==-1) {
 				return;
 			}
 
-			let i=urlParams.indexOf("qfq=");
+			var i=urlParams.indexOf("qfq=");
 			if(i==-1)
 				return;
-			let j=urlParams.indexOf("&",i);
+			var j=urlParams.indexOf("&",i);
 
-			let queueName=urlParams.substring(i+"qfq=".length,j);
+			var queueName=urlParams.substring(i+"qfq=".length,j);
 
-			let sqs = this.settings.queues;
-			for(let i=0; i<sqs.length; i++) {
-				let queue=sqs[i];
+			var sqs = t.settings.queues;
+			for(var i=0; i<sqs.length; i++) {
+				var queue=sqs[i];
 				if(queue.name != queueName) {
 					continue;
 				}
 
-				this.log("Found queue for querystring "+queueName);
-				let value=""+urlParams;
+				t.l("Found queue for querystring "+queueName);
+				var value=""+urlParams;
 				value=value.substring(value.indexOf("qfqid"));
-				this.setCookie(queueName, value, queue.passedLifetimeMinutes*60,
+				t.setCookie(queueName, value, queue.passedLifetimeMinutes*60,
 					queue.cookieDomain);
 
-				this.log("Marking "+queueName+" as passed by queryString");
-				this.passed[queueName]=true;
+				t.l("Marking "+queueName+" as passed by queryString");
+				t.passed[queueName]=true;
 
-				let loc=""+document.location;
+				var loc=""+document.location;
 
-				let j = loc.lastIndexOf("#");
+				var j = loc.lastIndexOf("#");
 				var savedFragment = null;
 				if(j!=-1) {
 					savedFragment = loc.substring(j);
@@ -838,19 +1067,33 @@ function defineQueueFair() {
 				if(savedFragment != null) {
 					loc += savedFragment;
 				}
-				window.history.replaceState({}, document.title, loc);
-
+				setTimeout(() => {
+					window.history.replaceState({}, document.title, loc);
+				},300);
 			}
 		}
 
 		onLocChange() {
+			var t=this;
 			try {
-				this.reset();
-				this.parseSettings();
+				t.reset();
+				t.parseSettings();
 			} catch(err) {
-				this.log("QF Error on Loc Change");
-				this.log(err);
-				this.errorHandler(err);
+				t.l("QF Error on Loc Change");
+				t.l(err);
+				t.e(err);
+			}
+		}
+
+		setDebug(debugState) {
+			if(!debugState || debugState == "false") {
+				return;
+			}
+			var t = this;
+			t.debug=true;
+			t.rdebug = (debugState == "remote");
+			if(t.rdebug) {
+				t.errMode = "POST";
 			}
 		}
 
@@ -861,7 +1104,7 @@ function defineQueueFair() {
 				mutations.forEach(function(mutation) {
 					if (queueFair.oldHref != document.location.href) {
 						queueFair.oldHref = document.location.href;
-						queueFair.log("Location changed to "+queueFair.oldHref);
+						queueFair.l("Location changed to "+queueFair.oldHref);
 						queueFair.onLocChange();
 					}
 				});
@@ -871,72 +1114,140 @@ function defineQueueFair() {
 			observer.observe(bodyList, config);
 		}
 
-		errorHandler(err) {
+		//Error handler
+		e(err, con = true) {
+			var t=this;
 			try {
-				console.log(err);
-				if(this.reported > 5) {
+				if(con) {
+					console.log(err);
+				}
+				if(t.reported > 5) {
 					//Reported too many errors.
 					return;
 				}
-				this.reported++;
+				t.reported++;
 				var errorData={ "name": err.name,
 				"message": err.message,
 				"url": document.location.href,
 				"stack": err.stack };
-				let errorTag = document.createElement('script');
-				let res = {};
+				var errorTag = document.createElement('script');
+				var res = {};
 				res.err = err;
 				res.errorData = errorData;
-				res.parsing = this.parsing;
-				res.protocol = this.protocol;
-				res.redirectLoc = this.redirectLoc;
-				res.adapterResult = this.adapterResult;
-				res.adapterQueue = this.adapterQueue;
-				res.hasSettings = (this.settings !== null);
-				res.clientName = this.clientName;
+				res.parsing = t.parsing;
+				res.protocol = t.protocol;
+				res.redirectLoc = t.redirectLoc;
+				res.adapterResult = t.adapterResult;
+				res.adapterQueue = t.adapterQueue;
+				res.hasSettings = (t.settings !== null);
+				res.clientName = t.clientName;
+				res.ln = t.ln;
 
-				let src = this.protocol+"://quality.queue-fair.net/onerror?err="+encodeURIComponent(JSON.stringify(res));
-				errorTag.src = src;
-				document.getElementsByTagName('head')[0].appendChild(errorTag);
+				var baseURL = t.protocol+"://quality.queue-fair.net/onerror";
+				if(t.errMode != "POST") {
+					var src = baseURL+"?err="+encodeURIComponent(JSON.stringify(res));
+					errorTag.src = src;
+					document.getElementsByTagName('head')[0].appendChild(errorTag);
+					return;
+				}
+				var req = new XMLHttpRequest();
+				req.open("POST", baseURL, true);
+				req.send(JSON.stringify(res));
+
 			} catch (err) {
 				console.log("Error in handler");
 				console.log(err)
 			}
 		}
 
-		go() {
-			try {
-				if((""+window.location).indexOf("QFDEBUG")!=-1) {
-					this.debug=true;
+
+		process() {
+			var t=this;
+			t.extractClientNameFromDataLayer();
+			if(!t.clientName) {
+				try {
+					t.extractClientName();
+				} catch (err) {
+					t.e(err);
 				}
-				window.addEventListener("load",function() {
+			}
+			if(!t.clientName) {
+				console.log("ERROR Queue-Fair couldn't find the client name. Please check the data-queue-fair-client parameter in the script tag on your page or tag manager.");
+				return;
+			}
+
+			t.setUIDFromCookie();
+			t.loadSettings();
+		}
+		
+		addListeners() {
+			var w=window,t=this;
+			try {
+				w.addEventListener("load",function() {
 					queueFair.locWatch();
 				});
 
-				window.addEventListener("DOMContentLoaded", (event) => {
+				w.addEventListener("DOMContentLoaded", (event) => {
 					try {
-						this.mp();
+						t.mp();
 					} catch (err) {
-						this.errorHandler(err);
+						t.e(err, false);
 					}});
 
-				this.extractClientName();
-				if(!this.clientName) {
+				w.addEventListener('pageshow', (event) => {
+					if(!event.persisted)
+						return;
+					t.l('Rerun');
 					try {
-						this.extractClientNameFromDataLayer();
+						t.reset();
+						t.process();
 					} catch (err) {
-						this.errorHandler(err);
+						t.e(err);
 					}
-				}
-				if(!this.clientName) {
-					console.log("ERROR Queue-Fair couldn't find the client name. Please check the data-queue-fair-client parameter in the script tag on your page or tag manager.");
-					return;
-				}
+				});
+			} catch (err) {
+				t.e(err);
+			}
+		}
 
-				this.loadSettings();
+		go() {
+			var t=this;
+			try {
+				window.addEventListener("error",(e) => {
+					var obj = {};
+					for (let k in e) {
+						obj[k] = e[k];
+					}
+					var s = JSON.stringify(obj, (k, v) => {
+						if (v instanceof Node) return 'Node';
+						if (v instanceof Window) return 'Window';
+						return v;
+					});
+					if(s.indexOf("adapterjs") !== -1) {s
+						t.complete("Adapter Remote Error: "+s);
+						return;
+					}
+					if(s.indexOf("queue-fair-settings") !== -1) {
+						t.complete("Settings Remote Error: "+s);
+					}
+				});
+			} catch (err) {
+				t.e(err);
+			}
+			if(t.started) {
+				console.log("WARNING: Attempt to run Queue-Fair Adapter a second time.  Returning.");
+				return;
+			}
+			try {
+				if((""+window.location).indexOf("QFDEBUG")!=-1) {
+					t.debug=true;
+				}
+				
+				t.addListeners();
+				t.process();
 			} catch (err) {
 				console.log("QF Error "+err.message);
-				this.errorHandler(err);
+				t.e(err);
 			}
 
 		}
@@ -947,6 +1258,9 @@ var queueFair;
 
 if(typeof window.QueueFair === "undefined") {
 	defineQueueFair();
-	queueFair=new QueueFair();
-	queueFair.go();
+	window.queueFair = queueFair = new QueueFair();
+	if(typeof qfNoAutoGo === "undefined" || !qfNoAutoGo) {
+		queueFair.go();
+	}
 }
+
